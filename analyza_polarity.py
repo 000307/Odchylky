@@ -1,5 +1,5 @@
 """Použití: python analyza_polarity.py 'cesta/*.csv' --out vysledky
-Závislosti: python -m pip install pandas numpy
+Závislosti: python -m pip install pandas numpy matplotlib
 Časy jsou lokální bez pásma; předpokládá se období bez změny času.
 """
 import argparse
@@ -8,6 +8,33 @@ import sys
 from pathlib import Path
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
+
+
+def plot_deviation(data, out):
+    # Doplnění chybějících minut jako NaN zabrání spojování čáry přes mezery.
+    series = data.set_index('time').mw.asfreq('min')
+    fig, ax = plt.subplots(figsize=(15, 5), layout='constrained')
+    ax.plot(series.index, series.values, color='#334155', linewidth=0.65)
+    ax.fill_between(series.index, series.values, 0, where=series.values >= 0,
+                    interpolate=True, color='#16a34a', alpha=0.5, label='Kladná odchylka')
+    ax.fill_between(series.index, series.values, 0, where=series.values <= 0,
+                    interpolate=True, color='#dc2626', alpha=0.5, label='Záporná odchylka')
+    ax.axhline(0, color='black', linewidth=0.8)
+    locator = mdates.AutoDateLocator()
+    ax.xaxis.set_major_locator(locator)
+    ax.xaxis.set_major_formatter(mdates.DateFormatter('%d.%m.\n%H:%M'))
+    ax.set(title='Odchylka ČR v čase', xlabel='Datum a místní čas', ylabel='Odchylka ČR [MW]')
+    ax.grid(alpha=0.2)
+    ax.legend(loc='best')
+    ax.margins(x=0)
+    path = out / 'odchylky.png'
+    fig.savefig(path, dpi=180)
+    print(f'Graf uložen: {path}')
+    if 'ipykernel' in sys.modules:
+        plt.show()
+    plt.close(fig)
 
 
 def analyze(files, out):
@@ -83,6 +110,7 @@ def analyze(files, out):
     ])
     (out / 'vysledky.txt').write_text(text, encoding='utf-8')
     print(text)
+    plot_deviation(data, out)
 
 
 def main(argv=None):
