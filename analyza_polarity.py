@@ -4,6 +4,7 @@ Závislosti: python -m pip install pandas numpy
 """
 import argparse
 import glob
+import sys
 from pathlib import Path
 import numpy as np
 import pandas as pd
@@ -84,12 +85,18 @@ def analyze(files, out):
     print(text)
 
 
-if __name__ == '__main__':
+def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('files', nargs='+', help='CSV soubory nebo glob vzory')
+    parser.add_argument('files', nargs='*', default=['*.csv'], help='CSV soubory nebo glob vzory (výchozí: *.csv)')
     parser.add_argument('--out', type=Path, default=Path('vysledky'))
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     files = sorted({p for pattern in args.files for p in glob.glob(pattern, recursive=True)})
     if not files:
         parser.error('Nenalezeny žádné CSV soubory.')
     analyze(files, args.out)
+
+
+if __name__ == '__main__':
+    # Při vložení do buňky nepřebírat argumenty běžícího Jupyter kernelu (-f).
+    # Příkazové spuštění (také !python v Colabu) zachovává běžné CLI argumenty.
+    main([] if 'ipykernel' in sys.modules else None)
