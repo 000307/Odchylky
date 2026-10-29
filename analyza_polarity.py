@@ -37,6 +37,52 @@ def plot_deviation(data, out):
     plt.close(fig)
 
 
+
+def analyze_time_patterns(data, eligible, flip, out):
+    # Zařazení podle VÝCHOZÍHO měření: minuta 59 znamená přechod :59 → :00.
+    time = data.time.shift()
+    pairs = pd.DataFrame({'hodina': time.dt.hour, 'minuta': time.dt.minute,
+                          'predchozi': data.polarity.shift(), 'zmena': flip})[eligible].copy()
+    pairs['petiminutovka'] = (pairs.minuta // 5) * 5
+    pairs['ctvrthodina'] = (pairs.minuta // 15) * 15
+    tables = {}
+    for key, size in [('hodina', 24), ('minuta', 60), ('petiminutovka', 12), ('ctvrthodina', 4)]:
+        records = []
+        for direction, sign in [('celkem', None), ('+ → −', 1), ('− → +', -1)]:
+            subset = pairs if sign is None else pairs[pairs.predchozi.eq(sign)]
+            table = subset.groupby(key).zmena.agg(['count', 'sum'])
+            bins = range(size) if key in ('hodina', 'minuta') else range(0, 60, 5 if key == 'petiminutovka' else 15)
+            table = table.reindex(bins, fill_value=0)
+            for bin_, row in table.iterrows():
+                n, k = int(row['count']), int(row['sum'])
+                records.append({key: bin_, 'smer': direction, 'pozorovani': n, 'zmeny': k,
+                                'pravdepodobnost_pct': 100*k/n if n else np.nan})
+        tables[key] = pd.DataFrame(records)
+        tables[key].to_csv(out / f'trend_{key}.csv', index=False)
+    fig, axes = plt.subplots(2, 1, figsize=(13, 8), layout='constrained')
+    for ax, key, xlabel in zip(axes, ['hodina', 'petiminutovka'],
+                               ['Hodina dne (výchozí měření)', 'Minuta v hodině (začátek pětiminutového intervalu)']):
+        for direction, color in [('celkem', '#334155'), ('+ → −', '#16a34a'), ('− → +', '#dc2626')]:
+            t = tables[key].query('smer == @direction')
+            ax.plot(t[key], t.pravdepodobnost_pct, marker='o', color=color, label=direction)
+        ax.set(xlabel=xlabel, ylabel='Změna v další minutě [%]', ylim=(0, None))
+        ax.set_xticks(range(24) if key == 'hodina' else range(0, 60, 5))
+        ax.grid(alpha=.2)
+        ax.legend()
+    fig.suptitle('Četnost změn polarity podle času — popis dodaných dat')
+    fig.savefig(out / 'trendy_polarity.png', dpi=180)
+    if 'ipykernel' in sys.modules:
+        plt.show()
+    plt.close(fig)
+    report = ['Časové skupiny vycházejí z času PŘED změnou; minuta 59 = :59 → :00.',
+              'Jde o četnosti změn v další minutě, nikoli pravděpodobnost alespoň jedné změny za celou hodinu.',
+              'Minutová pozorování jsou závislá; šest dní nestačí k potvrzení stabilního denního vzorce.',
+              '\nPodle hodiny dne:', tables['hodina'].to_string(index=False),
+              '\nPodle čtvrthodiny:', tables['ctvrthodina'].to_string(index=False)]
+    (out / 'trendy.txt').write_text('\n'.join(report), encoding='utf-8')
+    print('\n'.join(report))
+
+
 def analyze(files, out):
     frames = []
     for file in files:
@@ -111,6 +157,7 @@ def analyze(files, out):
     (out / 'vysledky.txt').write_text(text, encoding='utf-8')
     print(text)
     plot_deviation(data, out)
+    analyze_time_patterns(data, eligible, flip, out)
 
 
 def main(argv=None):
