@@ -139,7 +139,7 @@ je potřeba ověřit na delší oddělené historii.
 ## Testy
 
 ```bash
-python -m unittest discover -s tests -v
+python -m unittest discover -s tests -p "test_bayes_ar.py" -v
 ```
 
 Testy kontrolují Gibbsův sampler proti analytickému posterioru, pravděpodobnosti

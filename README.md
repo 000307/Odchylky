@@ -1,5 +1,15 @@
 # Odchylka ČR
 
+## Nixtla a LightGBM: Brierovo skóre a kalibrace
+
+Srovnání MLForecast s regresorem LightGBM, přímého klasifikátoru znamének
+a jejich pevné kombinace 50:50. Učení, kalibrace a test používají oddělené dny.
+
+- [Spustit srovnání v Google Colabu](https://colab.research.google.com/github/000307/Odchylky/blob/main/predikce_nixtla_znamenka_colab.ipynb)
+- [Výsledky srovnání a kalibrační grafy](VYSLEDKY_NIXTLA.md)
+- [Návod a metodika](NIXTLA_ZNAMENKA.md)
+- [Python skript](predikce_nixtla_znamenka.py)
+
 ## Bayesovský AR(5) s MCMC: pravděpodobnosti znamének
 
 Nový model odhaduje pro každou z dalších deseti minut pravděpodobnost kladné

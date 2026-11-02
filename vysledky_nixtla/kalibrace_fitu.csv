@@ -1,0 +1,7 @@
+test_day,model,kind,n_calibration,n_positive,n_negative,fallback,constant_probability,fallback_reason
+2026-09-26,MLForecast,regression,960,129,831,False,,
+2026-09-26,LightGBM,classifier,960,129,831,False,,
+2026-09-27,MLForecast,regression,960,177,783,False,,
+2026-09-27,LightGBM,classifier,960,177,783,False,,
+2026-09-28,MLForecast,regression,960,388,572,False,,
+2026-09-28,LightGBM,classifier,960,388,572,False,,

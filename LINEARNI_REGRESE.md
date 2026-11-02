@@ -79,5 +79,5 @@ Testy používají umělá data a kontrolují matematiku regrese, všech deset
 časových horizontů, čtení CSV a oddělení minulosti od budoucích hodnot:
 
 ```bash
-python -m unittest discover -s tests -v
+python -m unittest discover -s tests -p "test_predikce_linearni_regrese.py" -v
 ```
