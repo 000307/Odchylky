@@ -1,5 +1,15 @@
 # Odchylka ČR
 
+## Lineární regrese: prvních 5 minut → dalších 10 minut
+
+Nová varianta používá běžnou lineární regresi bez penalizace a pět minutových
+hodnot jako vstup. Předpoví deset následujících minut i jejich průměr.
+Umí historické vyhodnocení i předpověď nového intervalu ze zadaných pěti hodnot.
+
+- [Otevřít lineární regresi v Google Colabu](https://colab.research.google.com/github/000307/Odchylky/blob/main/predikce_linearni_regrese_colab.ipynb)
+- [Návod a příklady spuštění](LINEARNI_REGRESE.md)
+- [Python skript](predikce_linearni_regrese.py)
+
 ## Predikce dalších 10 minut z prvních 5 minut čtvrthodiny
 
 [Otevřít notebook v Google Colabu](https://colab.research.google.com/github/000307/Odchylky/blob/main/predikce_colab.ipynb)
