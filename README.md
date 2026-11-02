@@ -1,5 +1,15 @@
 # Odchylka ČR
 
+## Bayesovský AR(5) s MCMC: pravděpodobnosti znamének
+
+Nový model odhaduje pro každou z dalších deseti minut pravděpodobnost kladné
+a záporné hodnoty, odhad v MW a 90% predikční interval. Používá Gibbsovo MCMC,
+kontroluje konvergenci a porovnává se se zachováním posledního znaménka.
+
+- [Spustit bayesovský model v Google Colabu](https://colab.research.google.com/github/000307/Odchylky/blob/main/predikce_bayes_ar_colab.ipynb)
+- [Návod, model a metodika vyhodnocení](BAYES_AR_MCMC.md)
+- [Python skript](predikce_bayes_ar.py)
+
 ## Lineární regrese: prvních 5 minut → dalších 10 minut
 
 Nová varianta používá běžnou lineární regresi bez penalizace a pět minutových
