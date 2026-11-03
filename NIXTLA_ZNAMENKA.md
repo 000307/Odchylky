@@ -9,7 +9,8 @@ pravděpodobnost kladné a záporné hodnoty. Hlavními ukazateli jsou Brierovo 
 a kalibrace pravděpodobností.
 
 Knihovny fungují lokálně i v Colabu bez API klíče. Výsledky provedeného
-srovnání jsou v [`VYSLEDKY_NIXTLA.md`](VYSLEDKY_NIXTLA.md).
+srovnání jsou v [`VYSLEDKY_NIXTLA.md`](VYSLEDKY_NIXTLA.md); návaznost na starší
+experimenty uvádí [`SROVNANI_MODELU.md`](SROVNANI_MODELU.md).
 
 ## Spuštění
 
@@ -64,6 +65,13 @@ znaménku v tréninku se použije označená vyhlazená konstantní pravděpodob
 Srovnání doplňuje zachování posledního známého znaménka a vyhlazená četnost
 znamének v dostupné minulosti. Pravděpodobnosti 0/1 u posledního znaménka
 jsou deterministická reference, nikoli kalibrovaný pravděpodobnostní model.
+
+Srovnání nyní obsahuje také **Poslední hodnota + sigmoid**: poslední známá hodnota
+v MW se opakuje do všech deseti horizontů a stejný minulý kalibrační den
+slouží k logistickému odhadu pravděpodobnosti. Kalibrátor má stejné vstupy
+(skóre, horizont a interakci) a stejnou regularizaci jako u MLForecast.
+Tato pravděpodobnostní reference může změnit odhad znaménka; původní
+pravidlo opakování znaménka páté minuty zůstává samostatně vyhodnocené.
 
 ## Oddělení učení, kalibrace a testu
 

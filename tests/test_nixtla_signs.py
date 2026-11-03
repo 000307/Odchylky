@@ -202,7 +202,7 @@ class ChronologicalWorkflowTests(unittest.TestCase):
         result, histories, calibrations, observed = self.run_mocked(self.blocks)
         self.assertEqual(len(histories), 1)
         np.testing.assert_array_equal(histories[0], self.blocks[:16])
-        self.assertEqual([kind for kind, _ in calibrations], ['regression', 'classifier'])
+        self.assertEqual([kind for kind, _ in calibrations], ['regression', 'classifier', 'regression'])
         for _, actual in calibrations:
             np.testing.assert_array_equal(actual, self.blocks[16:24, 5:])
         np.testing.assert_array_equal(observed[0], self.blocks[16:24, :5])
@@ -244,7 +244,7 @@ class ChronologicalWorkflowTests(unittest.TestCase):
         np.testing.assert_array_equal(histories[0], self.blocks[:16])
         for _, values in targets:
             np.testing.assert_array_equal(values, self.blocks[16:24, 5:])
-        self.assertEqual(len(actual['predictions']), 60)
+        self.assertEqual(len(actual['predictions']), 70)
 
     def test_summary_reliability_and_scores_share_the_same_nonzero_denominator(self):
         blocks = self.blocks.copy()
@@ -256,6 +256,36 @@ class ChronologicalWorkflowTests(unittest.TestCase):
         count = summary['reliability'].groupby('model')['count'].sum()
         self.assertTrue(count.eq(79).all())
         self.assertTrue(summary['reliability'].groupby('model').size().eq(10).all())
+
+    def test_calibrated_persistence_uses_only_fifth_value_and_past_calibrator(self):
+        past = self.blocks[16:24]
+        scores = np.repeat(past[:, 4:5], 10, axis=1)
+        last_calibrator = fit_calibrator(scores, past[:, 5:], kind='regression')
+        reg_calibrator = fit_calibrator(np.zeros_like(scores), past[:, 5:], kind='regression')
+        clf_calibrator = fit_calibrator(np.full_like(scores, .5), past[:, 5:], kind='classifier')
+        workflow = (None, reg_calibrator, clf_calibrator, last_calibrator)
+        known = self.blocks[24:, :5].copy()
+        changed = known.copy()
+        changed[:, :4] += 1000000
+        raw = {'regression_mw': np.zeros((len(known), 10)),
+               'classifier_raw': np.full((len(known), 10), .5)}
+        with patch.object(self.runner, 'predict_base', return_value=raw):
+            first, _ = self.runner._probabilities(workflow, known, self.blocks[:24])
+            second, _ = self.runner._probabilities(workflow, changed, self.blocks[:24])
+        np.testing.assert_array_equal(first[self.runner.LAST_CAL], second[self.runner.LAST_CAL])
+        expected = apply_calibrator(last_calibrator, np.repeat(known[:, 4:5], 10, axis=1))
+        np.testing.assert_array_equal(first[self.runner.LAST_CAL], expected)
+
+    def test_calibrated_persistence_does_not_silently_replace_unchanged_sign_rule(self):
+        truth = -np.ones((8, 10))
+        reg_calibrator = fit_calibrator(np.ones_like(truth), truth, kind='regression')
+        clf_calibrator = fit_calibrator(np.full_like(truth, .5), truth, kind='classifier')
+        workflow = (None, reg_calibrator, clf_calibrator, reg_calibrator)
+        raw = {'regression_mw': np.zeros((1, 10)), 'classifier_raw': np.full((1, 10), .5)}
+        with patch.object(self.runner, 'predict_base', return_value=raw):
+            probabilities, _ = self.runner._probabilities(workflow, np.ones((1, 5)), self.blocks[:24])
+        self.assertTrue((probabilities[self.runner.LAST] == 1).all())
+        self.assertTrue((probabilities[self.runner.LAST_CAL] < .5).all())
 
 
 if __name__ == '__main__':

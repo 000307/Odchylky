@@ -7,6 +7,7 @@ a jejich pevné kombinace 50:50. Učení, kalibrace a test používají oddělen
 
 - [Spustit srovnání v Google Colabu](https://colab.research.google.com/github/000307/Odchylky/blob/main/predikce_nixtla_znamenka_colab.ipynb)
 - [Výsledky srovnání a kalibrační grafy](VYSLEDKY_NIXTLA.md)
+- [Srovnání se staršími modely a opakováním páté minuty](SROVNANI_MODELU.md)
 - [Návod a metodika](NIXTLA_ZNAMENKA.md)
 - [Python skript](predikce_nixtla_znamenka.py)
 

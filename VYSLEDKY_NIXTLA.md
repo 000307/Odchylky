@@ -2,7 +2,7 @@
 
 [Spustit stejné vyhodnocení v Google Colabu](https://colab.research.google.com/github/000307/Odchylky/blob/main/predikce_nixtla_znamenka_colab.ipynb)
 
-Nejlepší Brierovo skóre v tomto běhu dosáhl **MLForecast se sigmoidní kalibrací**. Nejnižší celkové ECE měl **kalibrovaný klasifikátor LightGBM**. Pevná kombinace 50:50 nejlepší Brier jednotlivé složky nepřekonala.
+Po doplnění jednoduché pravděpodobnostní reference má v této sadě nejnižší Brier **poslední hodnota se sigmoidní kalibrací**. Z původní trojice MLForecast / klasifikátor / kombinace zůstává nejlepší Brier u MLForecast. **Pro správnost jednotlivých znamének stále vítězí nezměněné opakování páté minuty (81,39 %).** Nejnižší celkové ECE měl **kalibrovaný klasifikátor LightGBM**. Pevná kombinace 50:50 nejlepší Brier jednotlivé složky nepřekonala.
 
 Vyhodnocení zahrnuje **288 čtvrthodin z 26.–28. září 2026**, tedy 2 880 budoucích minut. Jedna skutečná hodnota byla přesně nulová; Brier, log-loss a ECE proto používají **2 879 nenulových případů**. Z celé šestidenní řady bylo dostupných 574 úplných čtvrthodin; tři neúplné byly vynechány.
 
@@ -10,16 +10,21 @@ Vyhodnocení zahrnuje **288 čtvrthodin z 26.–28. září 2026**, tedy 2 880 b
 
 | Metoda | Brier ↓ | Log-loss ↓ | ECE ↓ | Správná znaménka včetně nuly |
 | --- | ---: | ---: | ---: | ---: |
+| Poslední znaménko | 0,18583 | 5,13463 | 0,18583 | 81,39 % |
+| Poslední hodnota + sigmoid | 0,14737 | 0,45085 | 0,06491 | 78,54 % |
 | MLForecast + sigmoid | 0,14854 | 0,44386 | 0,06316 | 76,77 % |
 | LightGBM + sigmoid | 0,15382 | 0,46146 | 0,03920 | 77,15 % |
 | Kombinace 50:50 | 0,14904 | 0,44680 | 0,04895 | 76,88 % |
 | LightGBM bez kalibrace | 0,15472 | 0,46948 | 0,06558 | 77,12 % |
-| Poslední znaménko | 0,18583 | 5,13463 | 0,18583 | 81,39 % |
 | Četnost v minulosti | 0,21272 | 0,62194 | 0,07971 | 71,08 % |
 
 ECE používá deset pevných pravděpodobnostních intervalů; je závislé na jejich volbě a nevyjadřuje celou kvalitu předpovědí. Počty a průměrné pravděpodobnosti jednotlivých intervalů jsou v [kalibrační tabulce](vysledky_nixtla/kalibrace.csv). Pravděpodobnosti 0/1 u zachování posledního znaménka jsou deterministická reference.
 
 ## Co přinesla kalibrace a kombinace
+
+Dodatečně byla přidána reference **Poslední hodnota + sigmoid**. Její vstup tvoří jen pátá hodnota v MW, horizont a jejich interakce. Používá stejný minulý kalibrační den, regularizaci i nulové případy jako ostatní pravděpodobnostní modely. Nemění se původní deterministické pravidlo: to má samostatný řádek. Kalibrovaná reference má Brier **0,14737**, ale správnost znamének **78,54 %**; kalibrátor totiž může změnit i rozhodnutí o znaménku. Jde o dodatečný retrospektivní experiment, ne o nezávislé nové ověření.
+
+Společný přehled hlavních dosavadních metod včetně bayesovské regrese a původní lineární regrese je v [samostatném srovnání](SROVNANI_MODELU.md).
 
 - U klasifikátoru klesl Brier z 0,15472 na 0,15382 a celkové ECE z 0,06558 na 0,03920.
 - Kombinace má Brier 0,14904 proti 0,14854 u MLForecast; rozdíl je malý a tento běh nedokazuje dlouhodobou převahu.

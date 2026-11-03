@@ -26,6 +26,7 @@ RAW = 'LightGBM bez kalibrace'
 CLF = 'LightGBM + sigmoid'
 MIX = 'Kombinace 50:50'
 LAST = 'Poslední znaménko'
+LAST_CAL = 'Poslední hodnota + sigmoid'
 FREQUENCY = 'Četnost v minulosti'
 
 
@@ -50,18 +51,21 @@ def _fit_workflow(base_blocks, calibration_blocks, seed, test_label):
     raw_calibration = predict_base(model, calibration_blocks[:, :5])
     regression_calibrator = fit_calibrator(raw_calibration['regression_mw'], calibration_blocks[:, 5:], kind='regression')
     classifier_calibrator = fit_calibrator(raw_calibration['classifier_raw'], calibration_blocks[:, 5:], kind='classifier')
+    last_scores = np.repeat(calibration_blocks[:, 4:5], 10, axis=1)
+    last_calibrator = fit_calibrator(last_scores, calibration_blocks[:, 5:], kind='regression')
     rows = []
-    for label, calibrator in [('MLForecast', regression_calibrator), ('LightGBM', classifier_calibrator)]:
+    for label, calibrator in [('MLForecast', regression_calibrator), ('LightGBM', classifier_calibrator),
+                              ('Poslední hodnota', last_calibrator)]:
         rows.append({'test_day': str(test_label), 'model': label, 'kind': calibrator.kind,
                      'n_calibration': calibrator.n_calibration, 'n_positive': calibrator.n_positive,
                      'n_negative': calibrator.n_negative, 'fallback': calibrator.fallback,
                      'constant_probability': calibrator.constant_probability,
                      'fallback_reason': calibrator.fallback_reason})
-    return (model, regression_calibrator, classifier_calibrator), pd.DataFrame(rows)
+    return (model, regression_calibrator, classifier_calibrator, last_calibrator), pd.DataFrame(rows)
 
 
 def _probabilities(workflow, observed, past_blocks):
-    model, regression_calibrator, classifier_calibrator = workflow
+    model, regression_calibrator, classifier_calibrator, last_calibrator = workflow
     raw = predict_base(model, observed)
     p_regression = apply_calibrator(regression_calibrator, raw['regression_mw'])
     p_classifier = apply_calibrator(classifier_calibrator, raw['classifier_raw'])
@@ -72,6 +76,7 @@ def _probabilities(workflow, observed, past_blocks):
         MLF: p_regression, RAW: raw['classifier_raw'], CLF: p_classifier,
         MIX: .5*p_regression+.5*p_classifier,
         LAST: np.repeat(last, 10, axis=1),
+        LAST_CAL: apply_calibrator(last_calibrator, np.repeat(observed[:, -1:], 10, axis=1)),
         FREQUENCY: np.full_like(p_regression, frequency),
     }, raw['regression_mw']
 
@@ -189,7 +194,7 @@ def save_plots(summary, directory):
     plt.close(fig)
     fig, axes = plt.subplots(1, 2, figsize=(13, 5), layout='constrained')
     axes[0].plot([0, 1], [0, 1], '--', color='gray', label='Ideální kalibrace')
-    for name in [MLF, RAW, CLF, MIX]:
+    for name in [MLF, RAW, CLF, MIX, LAST_CAL]:
         part = summary['reliability'][summary['reliability'].model.eq(name)]
         valid = part['count'].gt(0)
         axes[0].plot(part.loc[valid, 'p_mean'], part.loc[valid, 'positive_rate'], 'o-', label=name)
@@ -242,6 +247,7 @@ def main(argv=None):
                 'Kombinace je pevný průměr obou výsledných pravděpodobností 50:50; její kalibrace není zaručena.\n'
                 'Skutečné nuly jsou vynechány z binárních skóre a kalibrace; jejich počet je uveden.\n'
                 'Poslední znaménko má deterministické pravděpodobnosti 0/1, při nule 0,5.\n'
+                'Poslední hodnota + sigmoid se kalibruje na stejném minulém dni; její odhad znaménka se může lišit od opakování posledního znaménka.\n'
                 'Nižší Brier, log-loss a ECE jsou lepší. ECE závisí na rozdělení do 10 pevných intervalů.\n\n'
                 + summary['metrics'].sort_values('brier').to_string(index=False, float_format=lambda v: f'{v:.5f}')
                 + '\n\nJde o retrospektivní srovnání. Tyto testovací dny byly prohlíženy už v předchozích experimentech.\n'
